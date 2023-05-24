@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>SELECT*</title>
+    <!-- 引入 ECharts.js 文件 -->
+    <script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
+    <!-- 引入 flatpickr.css 文件 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/flatpickr.min.css') }}">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet"/>
+</head>
+
+<body>
+<h1>龙源电力新能源电量预测分析系统</h1>
+<!-- 下拉菜单 -->
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+    <div>
+        <label for="wind-farm-select">风场:</label>
+        <select id="wind-farm-select">
+            <option value="WF1">风场 1</option>
+            <option value="WF2">风场 2</option>
+            <option value="WF3">风场 3</option>
+            <option value="WF4">风场 4</option>
+            <option value="WF5">风场 5</option>
+            <option value="WF6">风场 6</option>
+            <option value="WF7">风场 7</option>
+            <option value="WF8">风场 8</option>
+            <option value="WF9">风场 9</option>
+            <option value="WF10">风场 10</option>
+        </select>
+    </div>
+    <div>
+        <label for="province-select">省份:</label>
+        <select id="province-select">
+            <option value="province1">省份 1</option>
+            <option value="province2">省份 2</option>
+            <option value="province3">省份 3</option>
+            <option value="province4">省份 4</option>
+            <option value="province5">省份 5</option>
+        </select>
+    </div>
+    <div>
+        <label for="time-range">日期:</label>
+        <input type="text" id="time-range">
+    </div>
+    <div class="button-group">
+        <button id="query-btn">查询</button>
+        <button id="export-btn">导出</button>
+        <button id="time-export-btn">按时间导出</button>
+    </div>
+</div>
+<!-- 引入 flatpickr.js 文件 -->
+
+<script src="{{ url_for('static', filename='js/flatpickr.js') }}"></script>
+{#实现打印按钮#}
+<script>
+    document.getElementById("export-btn").addEventListener("click", function () {
+        window.print();
+    });
+    document.getElementById("time-export-btn").addEventListener("click", function () {
+        window.print();
+    });
+</script>
+<script>
+    var daterage = null;
+    flatpickr("#time-range", {
+        mode: "range",
+        dateFormat: "Y年m月d日",
+        defaultDate: ["2020-02-21", "2020-02-22"],
+        onChange: function (selectedDates, dateStr, instance) {
+            console.log("Selected Date Range:", dateStr);
+            daterage = dateStr;
+        }
+    });
+</script>
+<!-- ECharts 图表 -->
+<div id="echarts-container" style="height: 80vh;"></div>
+
+{#查询按钮事件绑定#}
+<script>
+    var queryButton = document.getElementById('query-btn');
+
+    {#获取风场得选择#}
+    var selectElementWind = document.getElementById('wind-farm-select');
+    var selectedOptionWind = selectElementWind.options[selectElementWind.selectedIndex];
+    var selectedTextWind = selectedOptionWind.text;
+    var selectedValueWind = selectedOptionWind.value;
+
+    console.log('选中的文本内容：', selectedTextWind);
+    console.log('选中的值：', selectedValueWind);
+    {#获取省份得选择#}
+    var selectElementProvince = document.getElementById('province-select');
+    var selectedOptionProvince = selectElementProvince.options[selectElementProvince.selectedIndex];
+    var selectedTextProvince = selectedOptionProvince.text;
+    var selectedValueProvince = selectedOptionProvince.value;
+
+    console.log('省份选中的文本内容：', selectedTextProvince);
+    console.log('选中的值：', selectedValueProvince);
+    {#获取选择得时间段#}
+
+    // 在这里编写按钮点击事件的处理逻辑
+    queryButton.addEventListener('click', function () {
+        console.log("选择得时间范围为：", daterage)
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/mainpage/changedata?' +
+            "WF=" + selectedValueWind + "&province=" + selectedValueProvince
+            + "&timerage=" + daterage, true);
+
+        let startIndex = daterage.indexOf(" to ");
+        let firstPart = daterage.slice(0, startIndex);
+        let secondPart = daterage.slice(startIndex + 4);
+
+        console.log("前半段字符串:", firstPart);
+        console.log("后面的字符串:", secondPart);
+        var time_array = [firstPart]
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                // 请求成功处理逻辑
+                var response = JSON.parse(xhr.responseText);
+                var YD_array = response.YD_data;
+                var ROUND_array = response.ROUND_data;
+
+                var floatYDArray = YD_array.map(function (element) {
+                    return parseInt(element);
+                });
+                var floatROUNDArray = ROUND_array.map(function (element) {
+                    return parseInt(element);
+                });
+                console.log(floatYDArray);
+                console.log(floatROUNDArray);
+                for (let i = 0; i < floatYDArray.length; i++) {
+                    time_array.push(" ");
+                }
+                time_array.push(secondPart)
+                // 初始化 ECharts 图表
+                var echartsContainer = document.getElementById('echarts-container');
+                var myChart = echarts.init(echartsContainer);
+
+                // 定义数据和配置项
+                var option = {
+                    title: {
+                        text: ''
+                    },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: ['预测功率', '实际功率'],
+                        textStyle: {
+                            color: '#b3d4fc' // 设置图例文本颜色为淡蓝色
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: time_array,
+                        axisLine: {
+                            lineStyle: {
+                                color: '#178600'
+                            }
+                        },
+                        axisLabel: {
+                            fontSize: 16
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: {
+                            lineStyle: {
+                                color: '#178600'
+                            }
+                        },
+                        axisLabel: {
+                            fontSize: 16,
+                            formatter: '{value}kw'
+                        }
+                    },
+                    series: [{
+                        name: '预测功率',
+                        type: 'line',
+                        // stack: 'Total',
+                        data: floatYDArray,
+                        smooth: true,
+                        itemStyle: {
+                            normal: {
+                                color: '#FF0000'
+                            }
+                        }
+                    },
+                        {
+                            name: '实际功率',
+                            type: 'line',
+                            // stack: 'Total',
+                            data: floatROUNDArray,
+                            smooth: true,
+                            itemStyle: {
+                                normal: {
+                                    color: '#B0CC35'
+                                }
+                            }
+                        },
+                    ]
+                };
+                myChart.setOption(option);
+            } else {
+                // 请求失败处理逻辑
+                console.error('请求失败');
+            }
+        };
+        xhr.send();
+    });
+
+</script>
+
+<script>
+    // 初始化 ECharts 图表
+    var echartsContainer = document.getElementById('echarts-container');
+    var myChart = echarts.init(echartsContainer);
+
+    // 定义数据和配置项
+    var option = {
+        title: {
+            text: ''
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        legend: {
+            data: ['预测功率', '实际功率'],
+            textStyle: {
+                color: '#b3d4fc' // 设置图例文本颜色为淡蓝色
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        toolbox: {
+            feature: {
+                saveAsImage: {}
+            }
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            axisLine: {
+                lineStyle: {
+                    color: '#178600'
+                }
+            },
+            axisLabel: {
+                fontSize: 16
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: {
+                lineStyle: {
+                    color: '#178600'
+                }
+            },
+            axisLabel: {
+                fontSize: 16,
+                formatter: '{value}kw'
+            }
+        },
+        series: [{
+            name: '预测功率',
+            type: 'line',
+            // stack: 'Total',
+            data: [120, 132, 101, 134, 90, 230, 210],
+            smooth: true,
+            itemStyle: {
+                normal: {
+                    color: '#FF0000'
+                }
+            }
+        },
+            {
+                name: '实际功率',
+                type: 'line',
+                // stack: 'Total',
+                data: [220, 182, 191, 234, 290, 330, 310],
+                smooth: true,
+                itemStyle: {
+                    normal: {
+                        color: '#B0CC35'
+                    }
+                }
+            },
+        ]
+    };
+    myChart.setOption(option);
+
+    // 初始化 flatpickr 时间选择器
+    flatpickr("#date-select", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i:S",
+        defaultDate: "today",
+        maxDate: "today",
+        onChange: function (selectedDates, dateStr, instance) {
+            console.log(selectedDates, dateStr, instance);
+            // 根据选择的时间更新 ECharts 数据和图表
+        }
+    });
+</script>
+</body>
+
+</html>

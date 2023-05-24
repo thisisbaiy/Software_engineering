@@ -1,0 +1,59 @@
+
+body {
+    color:#b0cc35;
+    background: url("../images/bg.jpg") no-repeat center;
+}
+/* h1样式 */
+h1 {
+    text-align: center; /* 居中 */
+    color: #b3d4fc; /* 淡蓝色 */
+    background: url("../images/title.png") no-repeat center;
+}
+/* 按钮样式 */
+button {
+    background-color: #4192f4; /* 淡蓝色 */
+    border: none;
+    border-radius: 10px; /* 圆角 */
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    opacity: 0.8; /* 透明度 */
+}
+button:hover {
+    opacity: 1; /* 鼠标悬停时透明度为1 */
+    cursor: pointer;
+}
+/* label样式 */
+label {
+    border-radius: 10px; /* 圆角 */
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #9097f5;
+    opacity: 0.8; /* 透明度 */
+}
+/* 下拉菜单样式 */
+select {
+    background-color: #9097f5; /* 淡蓝色 */
+    border: none;
+    border-radius: 10px; /* 圆角 */
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    opacity: 0.8; /* 透明度 */
+}
+select:hover {
+    opacity: 1; /* 鼠标悬停时透明度为1 */
+    cursor: pointer;
+}
+input{
+    color: #9097f5;
+}
+.flatpickr-input {
+    background-color: #9097f5; /* 淡蓝色 */
+    border-radius: 10px; /* 圆角 */
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #0818f9;
+    opacity: 0.8; /* 透明度 */
+    width: 260px;
+}
